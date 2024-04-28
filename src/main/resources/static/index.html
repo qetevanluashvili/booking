@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Booking System</title>
+  <style>
+      
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f8f8;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background-color: #004080;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.hotels-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.hotel {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.hotel h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.hotel button {
+    background-color: #004080;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hotel button:hover {
+    background-color: #00214d;
+}
+
+.selected-hotel {
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.selected-hotel h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.room-selection-form select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.room-selection-form button {
+    background-color: #004080;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.room-selection-form button:hover {
+    background-color: #00214d;
+}
+
+footer {
+    background-color: #004080;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+    </style>
+</head>
+<body>
+<header>
+  <h1>Welcome to the Hotel Booking System</h1>
+</header>
+
+<div class="container">
+  <div id="hotelsList" class="hotels-list">
+
+  </div>
+
+  <div id="selectedHotel" class="selected-hotel">
+
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2024 Hotel Booking System</p>
+</footer>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    const hotelsListDiv = document.getElementById('hotelsList');
+    const selectedHotelDiv = document.getElementById('selectedHotel');
+
+
+    fetch('/hotels')
+        .then(response => response.json())
+        .then(data => {
+
+            for (let i = 0; i < Math.min(5, data.length); i++) {
+                const hotel = data[i];
+                const hotelDiv = document.createElement('div');
+                hotelDiv.classList.add('hotel');
+                hotelDiv.innerHTML = `
+                    <h2>${hotel.name}</h2>
+                    <button class="select-hotel-btn" data-hotel-id="${hotel.id}">Select Hotel</button>
+                `;
+                hotelsListDiv.appendChild(hotelDiv);
+            }
+        })
+        .catch(error => console.error('Error fetching hotels:', error));
+
+    hotelsListDiv.addEventListener('click', function (event) {
+        const target = event.target;
+        if (target.classList.contains('select-hotel-btn')) {
+            const hotelId = target.getAttribute('data-hotel-id');
+            fetch(`/hotels/${hotelId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const roomSelectionForm = `
+                        <h2>Select Room</h2>
+                        <form id="roomSelectionForm" onsubmit="return bookRoom('${hotelId}')">
+                            <select name="room" required>
+                                <option value="">Select Room</option>
+                                <!-- Room options will be dynamically populated here -->
+                            </select>
+                            <button type="submit">Book Room</button>
+                        </form>
+                    `;
+                    selectedHotelDiv.innerHTML = roomSelectionForm;
+
+                    const selectElement = document.querySelector('#roomSelectionForm select[name="room"]');
+                    data.rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.id;
+                        option.textContent = room.name;
+                        selectElement.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching rooms for hotel:', error));
+        }
+    });
+
+    function bookRoom(hotelId) {
+        const form = document.getElementById('roomSelectionForm');
+        const selectedRoomId = form.elements.room.value;
+        fetch(`/hotels/${hotelId}/rooms/${selectedRoomId}/book`, { method: 'POST' })
+            .then(response => {
+                if (response.ok) {
+                    alert('Room booked successfully!');
+
+                } else {
+                    alert('Failed to book room. Please try again later.');
+                }
+            })
+            .catch(error => console.error('Error booking room:', error));
+        return false; // Prevent form submission
+    }
+});
+
+
+    </script>
+</body>
+</html>
